@@ -1,0 +1,95 @@
+1. Wyświetl wykaz zamówień, zawierający: 
+id zamówienia, cenę jednostkową, ilość, wartość, 
+cenę jednostkową powiększoną o 15%, 
+wartość, a także kwoty rabatu w dwóch wariantach 
+(dla ceny oryginalnej oraz ceny zmienionej)
+
+SELECT OrderID, UnitPrice, Quantity, 
+Quantity*UnitPrice AS CurrValue,
+ROUND(UnitPrice*1.15, 2) AS ChangedUnitPrice,
+ROUND(Quantity*UnitPrice*1.15, 2) AS NewValue,
+Round(Discount*UnitPrice, 2) AS DiscountOrg, 
+ROUND(Discount*UnitPrice, 2) AS CurrDiscount, 
+ROUND(Discount*UnitPrice*1.15,2) AS NewDiscountValue
+FROM [Order Details]
+
+
+2. Wyświetl wykaz pracowników,
+ w układzie: "[zwrot grzecznościowy] [imię] [nazwisko], ur. [data], 
+zatrudniony w dniu [data], adres: [adres], [miasto], [kod], [państwo]", 
+posortowany rosnąco po dacie urodzenia.
+
+SELECT TitleOfCourtesy + ' ' + 
+       FirstName + ' ' +
+	   LastName +
+	   ' ur. ' + CONVERT(VARCHAR(12), BirthDate, 100) +
+	   'zatrudniony w dniu ' + CONVERT(VARCHAR(12), HireDate, 100) +
+	   'Adres: ' + CONVERT(VARCHAR(100), Address, 100) + ' ' +
+	   City + ' ' +
+	   PostalCode + ' ' +
+	   Country
+FROM Employees
+ORDER BY BirthDate asc;
+3. Wyświetl wykaz 3 pracowników z najkrótszym stażem,
+ w układzie: "[zwrot grzecznościowy] 
+[imię] [nazwisko], zatrudniony: [data]"
+
+SELECT TOP 3 TitleOfCourtesy + ' ' + FirstName + ' ' + LastName +
+' zatrudniony: ' + CONVERT(varchar(12), HireDate, 100) 
+FROM Employees
+ORDER BY HireDate DESC;
+
+4. Podaj ilu jest pracowników, dla których wartość atrybutu 'Region' nie jest pusta.
+5. Podaj średnią cenę produktu.
+6. Podaj średnią cenę produktu, 
+	którego stan magazynowy wynosi co najmniej 30.
+7. Podaj średnią cenę produktu, 
+	którego stan magazynowy jest wyższy niż średnia
+	stanu magazynowego wszystkich produktów
+
+Ad 4 
+SELECT COUNT(*)
+FROM Employees
+WHERE Region is not NULL
+
+Ad 5
+SELECT ProductID, ROUND(AVG(UnitPrice), 2)
+FROM [Order Details]
+GROUP BY ProductID
+Order BY ProductID
+
+Ad 6
+SELECT AVG(UnitPrice)
+FROM Products
+WHERE UnitsInStock > 30
+
+Ad 7
+SELECT AVG(UnitPrice)
+FROM Products
+WHERE UnitsInStock > (SELECT AVG(UnitsInStock) FROM Products)
+
+
+
+8. Podaj sumę produktów sprzedanych po cenie większej niż 30.
+9. Podaj maksymalną, minimalną i średnią cenę produktu dla 
+ produktów sprzedawanych w butelkach (‘bottle’)
+10. Wypisz informację o wszystkich produktach o cenie powyżej średniej ceny
+
+Ad. 8
+SELECT SUM(Quantity)
+FROM [Order Details]
+WHERE UnitPrice*Quantity*(1-Discount) > 30
+
+Ad. 9
+SELECT MAX(UnitPrice) AS Maximum,
+       MIN(UnitPrice) AS Minimum,
+	   AVG(UnitPrice) AS AVERAGE
+FROM Products
+WHERE QuantityPerUnit LIKE '%bottle%'
+
+Ad. 10
+SELECT *
+FROM Products
+WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)
+
+

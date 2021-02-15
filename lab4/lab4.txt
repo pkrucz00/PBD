@@ -1,0 +1,65 @@
+1. Wybierz nazwy i numery telefonów klientów , którym w 1997 roku przesyłki dostarczała firma United Package.
+2. Wybierz nazwy i numery telefonów klientów, którzy kupowali produkty z kategorii Confections
+
+Ad. 1
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN Shippers ON Shippers.ShipperID = Orders.ShipVia
+WHERE YEAR(OrderDate) = 1997 AND Shippers.CompanyName LIKE 'United Package'
+ORDER BY CompanyName
+
+Ad. 2
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID
+LEFT JOIN Products ON [Order Details].ProductID = Products.ProductID
+LEFT JOIN Categories ON Products.CategoryID = Categories.CategoryID
+WHERE Categories.CategoryName LIKE 'Confections'
+
+Ad. 3
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID
+LEFT JOIN Products ON [Order Details].ProductID = Products.ProductID
+LEFT JOIN Categories ON Products.CategoryID = Categories.CategoryID
+WHERE Categories.CategoryName NOT LIKE 'Confections'
+
+Ad. 4
+SELECT Products.ProductName, MAX([Order Details].Quantity) AS MaxQuantity
+FROM [Order Details] Join Products ON Products.ProductID = [Order Details].ProductID
+GROUP BY Products.ProductName
+
+Ad. 5
+SELECT *
+FROM Products
+WHERE UnitPrice < (SELECT AVG(UnitPrice) FROM Products);
+
+Ad. 6
+SELECT *
+FROM Products
+WHERE UnitPrice < (SELECT AVG(UnitPrice) FROM Products)
+ AND CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName LIKE 'Chang');
+		
+Ad. 7			
+SELECT ProductName, UnitPrice,
+(SELECT AVG(UnitPrice) FROM Products) AS averagePrice,
+UnitPrice - (SELECT AVG(UnitPrice) FROM Products) AS diff
+FROM Products
+
+Ad. 8
+SELECT *, (UnitPrice - (SELECT AVG(UnitPrice) FROM Products)) AS DIFF
+FROM
+(
+    SELECT Categories.CategoryName,ProductName,UnitPrice,T1.ŚR 
+    FROM Products
+    JOIN
+        (SELECT Categories.CategoryID, AVG(UnitPrice) AS ŚR
+        FROM Products
+        JOIN Categories ON Products.CategoryID=Categories.CategoryID
+        GROUP BY Categories.CategoryID) 
+        AS T1
+    ON T1.CategoryID=Products.CategoryID
+    JOIN Categories ON Products.CategoryID=Categories.CategoryID
+) AS T2
+
+

@@ -1,0 +1,80 @@
+13. Dla każdego pracownika (imię i nazwisko) podaj łączną wartość zamówień obsłużonych
+ przez tego pracownika (przy obliczaniu wartości zamówień uwzględnij cenę za przesyłkę)
+14. Ogranicz wynik z punktu wyżej tylko do pracowników
+	 a) którzy mają podwładnych
+	 b) którzy nie mają podwładnych
+15. Który z pracowników pracował najefektywniej (obsłużył zamówienia o największej wartości)
+	 w 1997r, podaj imię i nazwisko takiego pracownika)
+16. Zmodyfikuj rozwiązania z punktu wyżej tak, 
+	aby dla pracowników pokazać dodatkowo datę ostatnio obsłużonego zamówienia
+
+
+Ad 13. SELECT Employees.FirstName, Employees.LastName, T2.PriceWithShippment
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+					GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+
+Ad 14.
+a) SELECT Employees.FirstName, Employees.LastName, T2.PriceWithShippment
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+					GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+WHERE Employees.EmployeeID IN (SELECT ReportsTo
+				FROM Employees)
+
+b) SELECT Employees.FirstName, Employees.LastName, T2.PriceWithShippment
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+					GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+WHERE Employees.EmployeeID NOT IN (SELECT ReportsTo
+					FROM Employees
+					WHERE ReportsTo IS NOT NULL)
+
+Ad. 15
+SELECT TOP 1 Employees.FirstName, Employees.LastName, T2.PriceWithShippment
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+								GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					WHERE YEAR(OrderDate) = 1997
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+ORDER BY PriceWithShippment desc;
+
+Ad. 16
+Zrobiłem modyfikację programów z 14 punktu, bo w treści jest mowa o "rozwiązaniach" z poprzedniego punktu, a w 15 jest tylko jedno rozwiązanie
+a) SELECT Employees.FirstName, Employees.LastName, T2.PriceWithShippment, T3.NewestOrder
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+					GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+				JOIN (SELECT EmployeeID, MAX(ShippedDate) AS NewestOrder
+						FROM Orders
+						GROUP BY EmployeeID) AS T3 ON Employees.EmployeeID = T3.EmployeeID
+WHERE Employees.EmployeeID IN (SELECT ReportsTo
+				FROM Employees)
+
+b) SELECT Employees.FirstName, Employees.LastName, T2.PriceWithShippment
+FROM Employees JOIN (SELECT Orders.EmployeeID, ROUND(SUM(Freight + T1.Price), 2) AS PriceWithShippment
+					FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+					GROUP BY OrderID) AS T1
+					ON T1.OrderID = Orders.OrderID
+					GROUP BY EmployeeID) AS T2 ON Employees.EmployeeID = T2.EmployeeID
+				JOIN (SELECT EmployeeID, MAX(ShippedDate) AS NewestOrder
+						FROM Orders
+						GROUP BY EmployeeID) AS T3 ON Employees.EmployeeID = T3.EmployeeID
+WHERE Employees.EmployeeID NOT IN (SELECT ReportsTo
+					FROM Employees
+					WHERE ReportsTo IS NOT NULL)

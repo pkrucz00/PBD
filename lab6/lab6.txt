@@ -1,0 +1,127 @@
+1. Wybierz nazwy i numery telefonów klientów , którym w 1997 roku przesyłki dostarczała firma United Package.
+2. Wybierz nazwy i numery telefonów klientów, którzy kupowali produkty z kategorii Confections
+
+18.11
+Wybierz nazwy i numery telefonów klientów, którzy nie kupowali produktów z kategorii Confections
+Dla każdego produktu podaj maksymalną liczbę zamówionych jednostek
+Podaj wykaz wszystkich produktów, których cena jest mniejsza niż średnia cena produktu
+Podaj wykaz wszystkich produktów, których cena jest mniejsza niż średnia cena produktu danej kategorii
+Dla każdego produktu podaj jego nazwę, cenę, średnią cenę wszystkich produktów oraz różnicę między ceną produktu a średnią ceną wszystkich produktów
+Dla każdego produktu podaj jego nazwę kategorii, nazwę produktu, cenę, średnią cenę wszystkich produktów danej kategorii oraz różnicę między ceną produktu a średnią ceną wszystkich produktów
+
+25.11
+9. Podaj łączną wartość zamówienia o numerze 10250
+ (uwzględnij cenę za przesyłkę)
+10. Podaj łączną wartość zamówień każdego zamówienia
+ (uwzględnij cenę za przesyłkę)
+11. Czy są jacyś klienci którzy nie złożyli żadnego zamówienia
+ w 1997 roku, jeśli tak to pokaż ich dane adresowe
+12. Podaj wykaz produktów kupowanych przez więcej niż jednego klienta
+
+
+
+Ad. 1
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN Shippers ON Shippers.ShipperID = Orders.ShipVia
+WHERE YEAR(OrderDate) = 1997 AND Shippers.CompanyName LIKE 'United Package'
+ORDER BY CompanyName
+
+Ad. 2
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID
+LEFT JOIN Products ON [Order Details].ProductID = Products.ProductID
+LEFT JOIN Categories ON Products.CategoryID = Categories.CategoryID
+WHERE Categories.CategoryName LIKE 'Confections'
+
+Ad. 3
+SELECT DISTINCT Customers.CompanyName, Customers.Phone
+FROM Customers JOIN Orders ON Customers.CustomerID = Orders.CustomerID
+LEFT JOIN [Order Details] ON Orders.OrderID = [Order Details].OrderID
+LEFT JOIN Products ON [Order Details].ProductID = Products.ProductID
+LEFT JOIN Categories ON Products.CategoryID = Categories.CategoryID
+WHERE Categories.CategoryName NOT LIKE 'Confections'
+
+Ad. 4
+SELECT Products.ProductName, MAX([Order Details].Quantity) AS MaxQuantity
+FROM [Order Details] Join Products ON Products.ProductID = [Order Details].ProductID
+GROUP BY Products.ProductName
+
+Ad. 5
+SELECT *
+FROM Products
+WHERE UnitPrice < (SELECT AVG(UnitPrice) FROM Products);
+
+Ad. 6
+SELECT *
+FROM Products
+WHERE UnitPrice < (SELECT AVG(UnitPrice) FROM Products)
+ AND CategoryID = (SELECT CategoryID FROM Categories WHERE CategoryName LIKE 'Chang');
+		
+Ad. 7			
+SELECT ProductName, UnitPrice,
+(SELECT AVG(UnitPrice) FROM Products) AS averagePrice,
+UnitPrice - (SELECT AVG(UnitPrice) FROM Products) AS diff
+FROM Products
+
+Ad. 8
+SELECT *, (UnitPrice - (SELECT AVG(UnitPrice) FROM Products)) AS DIFF
+FROM
+(
+    SELECT Categories.CategoryName,ProductName,UnitPrice,T1.ŚR 
+    FROM Products
+    JOIN
+        (SELECT Categories.CategoryID, AVG(UnitPrice) AS ŚR
+        FROM Products
+        JOIN Categories ON Products.CategoryID=Categories.CategoryID
+        GROUP BY Categories.CategoryID) 
+        AS T1
+    ON T1.CategoryID=Products.CategoryID
+    JOIN Categories ON Products.CategoryID=Categories.CategoryID
+) AS T2
+
+
+25.11
+
+Ad. 9
+SELECT Orders.OrderID,
+ Freight + (SELECT SUM(UnitPrice*Quantity*(1-Discount))
+                                 FROM [Order Details]
+				WHERE OrderID = 10250) AS Price
+
+FROM ORDERS
+WHERE OrderID = 10250
+
+Ad. 10
+SELECT Orders.OrderID, Freight + T1.Price AS PriceWithShippment
+FROM ORDERS Join (SELECT OrderID, SUM(UnitPrice*Quantity*(1-Discount)) AS Price
+                                 FROM [Order Details]
+				GROUP BY OrderID) AS T1
+				ON T1.OrderID = Orders.OrderID
+
+Ad. 11
+SELECT Address, CountedOrders
+FROM Customers JOIN (SELECT CustomerID, COUNT(*) AS CountedOrders
+				FROM Orders
+				WHERE YEAR(orders.OrderDate) = 1997
+				GROUP BY CustomerID) AS T1
+                     ON T1.CustomerID = Customers.CustomerID
+WHERE CountedOrders = 0
+
+Ad. 12
+SELECT Products.ProductName, COUNT(distinct CustomerID) AS CustForProd
+FROM Products JOIN [Order Details] ON [Order Details].ProductID = Products.ProductID
+JOIN Orders ON [Order Details].OrderID = Orders.OrderID
+GROUP BY Products.ProductName
+HAVING COUNT(distinct CustomerID) > 1
+
+
+2.12
+
+
+
+
+
+
+

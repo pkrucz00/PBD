@@ -1,0 +1,64 @@
+8. Podaj ilu jest pracowników,
+ którzy urodzili się przed 1960 rokiem i mieszkają w Londynie.
+9. Podaj dane 5-ciu najstarszych pracowników.
+10. Podaj ilu jest pracowników,
+ którzy urodzili się pomiędzy latami 1950-1955 
+lub 1958-60 i mieszkają w Londynie.
+11. Wyświetl aktualna listę produktów 
+(atrybut Discontinued)
+12. Podaj ID zamówienia oraz ID klienta 
+dla zamówień dokonanych przed 1.09.1996
+13.Podaj dane klientów, którzy w nazwie 
+mają frazę 'the'
+14.Podaj dane klientów, których nazwa 
+zaczyna się na literę 'B' lub 'W'
+15.Podaj dane produktów, których nazwa 
+zaczyna się na literę 'C' lub których productid
+ jest mniejszy niż 40, jednocześnie których cena 
+jest większa niż 20.
+
+ROZWIĄZANIA
+8. SELECT COUNT(*)
+FROM Employees
+WHERE City = 'LONDON' AND YEAR(BirthDate) < 1960;
+
+ODP: 1
+
+9. SELECT TOP 5 *
+FROM Employees
+ORDER BY BirthDate;
+
+10. SELECT *
+FROM Employees
+WHERE (YEAR(BirthDate) BETWEEN 1950 AND 1955)
+		OR ( (YEAR(BirthDate) BETWEEN 1958 AND 1960 ) AND City = 'London')
+
+11. SELECT ProductName
+FROM Products
+WHERE Discontinued = 0
+
+12. SELECT COUNT(*)
+FROM Orders
+WHERE OrderDate <= '1996.09.01'
+
+13. SELECT *
+FROM Customers
+WHERE CompanyName LIKE '%the%'
+
+14. SELECT *
+FROM Customers
+WHERE CompanyName LIKE 'B%' OR CompanyName LIKE 'W%'
+
+15. SELECT *
+FROM Products
+WHERE (ProductName LIKE 'C%' OR ProductID < 40) 
+	AND UnitPrice > 20 
+
+
+
+
+
+
+
+
+

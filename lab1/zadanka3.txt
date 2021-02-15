@@ -1,0 +1,105 @@
+16. Wyświetl raport roczny sprzedaży
+ - łączne kwoty w poszczególnych latach dla poszczególnych firm
+ oraz w ujęciu całkowitym.
+17. Wyświetl raport roczny sprzedaży - łączne kwoty w poszczególnych
+ latach,
+ wraz ze sztukami.
+18. Wyświetl raport roczny sprzedaży - łączne kwoty w poszczególnych latach
+, wraz ze sztukami, w rozbiciu na kwartały.
+19. Wyświetl dostawców, którzy nie posiadają strony internetowej, 
+nie posiadają faxu, z kraju USA lub Germany
+20.Podaj ile jest produktów pakowanych w butelki/szkło
+21. Która kategoria produktów jest najliczniejsza (produkty w kategorii)?
+22. Wyświetl listę kategorii z uwzględnieniem łącznych
+ stanów magazynowych, posortowaną rosnąco.
+23. Podaj nazwy i ceny produktów z kategorii Seafood
+
+ROZWIAZANIA
+
+Do zadań 16 - 18 : przychód obliczam jako UnitPrice*Quantity*(1-discount)
+
+16. SELECT CompanyName,
+ROUND(SUM(CASE(YEAR(Orders.OrderDate))
+    WHEN '1996' THEN [Order Details].UnitPrice*Quantity*(1-Discount)
+    ELSE 0
+    END), 2) AS '1996',
+ROUND(SUM(CASE(YEAR(Orders.OrderDate))
+    WHEN '1997' THEN [Order Details].UnitPrice*Quantity*(1-Discount)
+    ELSE 0
+    END), 2) AS '1997',
+ROUND(SUM(CASE(YEAR(Orders.OrderDate))
+    WHEN '1998' THEN [Order Details].UnitPrice*Quantity*(1-Discount)
+    ELSE 0
+    END), 2) AS '1998',
+ROUND(SUM([Order Details].UnitPrice*Quantity*(1-Discount)), 2) AS TOTAL_INCOME
+FROM [Order Details] 
+RIGHT JOIN Products ON [Order Details].ProductID = Products.ProductID
+RIGHT JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID
+LEFT JOIN Orders ON [Order Details].OrderID = Orders.OrderID
+GROUP BY CompanyName
+
+17. SELECT YEAR(OrderDate) AS YEAR_,
+SUM([Order Details].Quantity) AS ITEMS_SOLD,
+ROUND(SUM(UNITPRICE*Quantity*(1-Discount)), 2) AS TOTAL_INCOME
+FROM [Order Details]
+RIGHT JOIN Orders ON [Order Details].OrderID = Orders.OrderID
+GROUP BY YEAR(OrderDate)
+ORDER BY YEAR(OrderDate) asc;
+
+18. SELECT YEAR(OrderDate) AS YEAR_,
+Quarter1 = ROUND(SUM(CASE(DATEPART(q, Orders.OrderDate))
+                    WHEN 1 THEN (UnitPrice*Quantity)*(1-Discount)
+                    ELSE 0
+                  END), 2),
+Quarter2 = ROUND(SUM(CASE(DATEPART(q, Orders.OrderDate))
+                    WHEN 2 THEN (UnitPrice*Quantity)*(1-Discount)
+                    ELSE 0
+                  END), 2),
+Quarter3 = ROUND(SUM(CASE(DATEPART(q, Orders.OrderDate))
+                    WHEN 3 THEN (UnitPrice*Quantity)*(1-Discount)
+                    ELSE 0
+                  END), 2),
+Quarter4 = ROUND(SUM(CASE(DATEPART(q, Orders.OrderDate))
+                    WHEN 4 THEN (UnitPrice*Quantity)*(1-Discount)
+                    ELSE 0
+                  END), 2),
+ROUND(SUM(UNITPRICE*Quantity*(1-Discount)), 2) AS TOTAL_INCOME
+FROM [Order Details]
+RIGHT JOIN Orders ON [Order Details].OrderID = Orders.OrderID
+GROUP BY YEAR(OrderDate)
+ORDER BY YEAR(OrderDate) asc;
+
+
+19. SELECT *
+FROM Suppliers
+WHERE Country IN ('USA', 'GERMANY')
+	AND FAX is NULL and HomePage is NULL
+
+20. SELECT COUNT(*)
+FROM Products
+WHERE QuantityPerUnit LIKE '%bottle%' 
+	OR QuantityPerUnit LIKE '%jar%' --sloiki zazwyczaj sa ze szkla, wiec je tutaj umiescilem, jednak nie jestem pewny
+	OR QuantityPerUnit LIKE '%glass%' 
+
+Odpowiedź: 23
+
+21. SELECT TOP 1 Categories.CategoryName, COUNT(*) AS NumberOfProdInCategory
+FROM Products
+RIGHT JOIN Categories 
+ON Products.CategoryID = Categories.CategoryID 
+GROUP BY Categories.CategoryName
+ORDER BY NumberOfProdInCategory desc
+
+ODP: Condections
+
+22. SELECT Categories.CategoryName, SUM(Products.UnitsInStock) AS SumInStock
+FROM Categories
+RIGHT JOIN  Products ON Categories.CategoryID = Products.CategoryID
+GROUP BY CategoryName
+ORDER BY  SumInStock desc;
+
+23.SELECT ProductName, UnitPrice
+FROM Products
+WHERE CategoryID = ( SELECT CategoryID
+			FROM Categories
+			WHERE CategoryName = 'Seafood')

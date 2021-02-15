@@ -1,0 +1,79 @@
+1. Podaj wartość zamówienia o numerze 10250
+2. Podaj maksymalną cenę zamawianego produktu dla każdego zamówienia.
+ Posortuj zamówienia wg maksymalnej ceny produktu
+3. Podaj maksymalną i minimalną cenę zamawianego produktu
+ dla każdego zamówienia
+4. Podaj średnią różnicę, pomiędzy maksymalną i minimalną
+ ceną zamawianych produktów
+ [Podaj średnią względną różnicę, pomiędzy maksymalną i minimalną ceną
+ zamawianych produktów]
+5. Podaj liczbę zamówień dostarczanych przez poszczególnych 
+spedytorów
+6. Który ze spedytorów był najaktywniejszy w 1997 roku
+7. Wyświetl zamówienia dla których liczba pozycji zamówienia
+ jest większa niż 5
+8. Wyświetl klientów, dla których w 1998 roku zrealizowano 
+więcej niż 8 zamówień
+ (wyniki posortuj malejąco wg łącznej kwoty za dostarczenie
+ zamówień dla każdego z klientów)
+
+Ad. 1
+SELECT ROUND(SUM(UnitPrice * Quantity * (1-Discount)), 2)
+AS Total_Order_Value
+FROM [Order Details]
+WHERE OrderID = 10250
+
+Ad. 2
+SELECT OrderID, MAX(UnitPrice* (1-Discount)) AS Highest_Price
+FROM [Order Details]
+GROUP BY OrderID
+ORDER BY Highest_Price desc;
+
+Ad. 3
+SELECT OrderID, MAX(UnitPrice* (1-Discount)) AS Highest_Price
+FROM [Order Details]
+GROUP BY OrderID
+ORDER BY Highest_Price desc;
+
+Ad. 4
+SELECT AVG(Diff) AS Avg_Diff
+FROM (SELECT (MAX(UnitPrice* (1-Discount))-MIN(UnitPrice* (1-Discount))) AS Diff
+		FROM [Order Details]
+		GROUP BY OrderID) AS AuxTab;
+
+Ad. 5
+SELECT Shippers.CompanyName, COUNT(*)
+FROM Orders RIGHT JOIN Shippers ON Orders.ShipVia = Shippers.ShipperID
+GROUP BY CompanyName
+
+Ad. 6
+SELECT TOP 1 Shippers.CompanyName, COUNT(*) AS Ship_Count
+FROM Orders RIGHT JOIN Shippers ON Orders.ShipVia = Shippers.ShipperID
+WHERE YEAR(orders.shippedDate)=1997
+GROUP BY CompanyName
+ORDER BY Ship_Count desc;
+
+Ad. 7
+SELECT OrderID, COUNT(ProductID) AS No_Of_Orders
+FROM [Order Details]
+GROUP BY OrderID
+HAVING COUNT(ProductID) > 5
+
+Ad. 8 //bez nawiasu
+SELECT Customers.CompanyName, COUNT(*) AS No_Of_Orders
+FROM Orders RIGHT JOIN Customers ON Orders.CustomerID = Customers.CustomerID
+WHERE YEAR(Orders.OrderDate) = 1998
+GROUP BY Customers.CompanyName
+HAVING COUNT(*) > 8
+
+//z nawiasem
+
+SELECT Customers.CompanyName, COUNT(*) AS No_Of_Orders
+FROM Orders RIGHT JOIN Customers ON Orders.CustomerID = Customers.CustomerID
+LEFT JOIN [Order Details] ON [Order Details].OrderID = Orders.OrderID
+WHERE YEAR(Orders.OrderDate) = 1998
+GROUP BY Customers.CompanyName
+HAVING COUNT(*) > 8
+ORDER BY ROUND(SUM(UNITPRICE*Quantity*(1-Discount)), 2) desc;
+
+
